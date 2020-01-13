@@ -23,11 +23,15 @@ class Bot:
     def get_move(self, state):
         # type: (State) -> tuple[int, int]
 
-        val, move = self.value(state)
+        if state.get_phase() is 1:
+            moves = state.moves()
+            return random.choice(moves)
 
+        val, move = self.value(state)
         return move
 
     def value(self, state, depth = 0):
+
         # type: (State, int) -> tuple[float, tuple[int, int]]
         """
         Return the value of this state and the associated move
@@ -44,7 +48,6 @@ class Bot:
             return heuristic(state)
 
         moves = state.moves()
-
         if self.__randomize:
             random.shuffle(moves)
 
@@ -57,7 +60,7 @@ class Bot:
 
             # IMPLEMENT: Add a recursive function call so that 'value' will contain the
             # minimax value of 'next_state'
-            value ???
+            value = self.value(next_state,depth+1)[0]
 
             if maximizing(state):
                 if value > best_value:
@@ -67,7 +70,6 @@ class Bot:
                 if value < best_value:
                     best_value = value
                     best_move = move
-
         return best_value, best_move
 
 def maximizing(state):

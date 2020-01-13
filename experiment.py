@@ -32,14 +32,19 @@ class Bot:
         self.__non_trump_move = non_trump_move
 
     def get_move(self, state):
-
-        if random.random() < self.__non_trump_move:
-
+        randomVal = random.random()
+        if randomVal < self.__non_trump_move:
             # IMPLEMENT: Make the best non-trump move you can. Use the best_non_trump_card method written below.
-            pass
-
+            return best_non_trump_card(state)
         #IMPLEMENT: Make a random move (but exclude the best non-trump move from above)
-        pass
+        myList = []
+        moves = state.moves()
+        for move in moves:
+            # print("best_non_trump_move ", move)
+            if move is not best_non_trump_card(state):
+                # print("move ", move)
+                myList.append(move)
+        return random.choice(myList)
 
 
 def empty(n):
@@ -85,7 +90,7 @@ random.seed(seed)
 
 # Parameters of our experiment
 STEPS = 10
-REPEATS = 5
+REPEATS = 1000
 
 inc = 1.0/STEPS
 
