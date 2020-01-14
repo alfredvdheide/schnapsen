@@ -2,12 +2,9 @@
 RandomBot -- A simple strategy: enumerates all legal moves, and picks one
 uniformly at random.
 """
-
 # Import the API objects
 from api import State, Deck
 import random
-
-
 class Bot:
 
     def __init__(self):
@@ -26,12 +23,12 @@ class Bot:
             indicating a move; the first indicates the card played in the trick, the second a
             potential spouse.
         """
-
         # All legal moves
         moves = state.moves()
         chosen_move = moves[0]
 
         #logic
+        #if lose, play worst card
         #play marriages
         #play trump card
         #play highest rated card

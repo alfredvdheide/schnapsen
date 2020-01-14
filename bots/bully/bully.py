@@ -34,7 +34,7 @@ class Bot:
 
 		#Get all trump suit moves available
 		for index, move in enumerate(moves):
-			print("move[0]: " + str(move[0]))
+			# print("move[0]: " + str(move[0]))
 			if move[0] is not None and Deck.get_suit(move[0]) == state.get_trump_suit():
 
 				moves_trump_suit.append(move)

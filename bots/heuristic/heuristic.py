@@ -4,15 +4,12 @@ uniformly at random.
 """
 
 # Import the API objects
-from api import State, Deck
+from api import State, Deck, util
 import csv
 import random
 
-
-
 class Bot:
     def __init__(self):
-
         pass
 
     def get_move(self, state):
@@ -33,7 +30,7 @@ class Bot:
             if(state.get_stock_size() == 10):
                 with open("bots/heuristic/possibleCards.csv", "w") as csv_file:
                     csv_writer = csv.writer(csv_file, delimiter=',')
-                    myList = list(range(0,23))
+                    myList = list(range(0,20))
                     csv_writer.writerow(myList)
 
         #get list of cards
@@ -46,64 +43,61 @@ class Bot:
 
         #remove one from the list
         def removeFromCSVList(myList, cardIndex):
-            myList.remove(str(cardIndex))
-            with open("bots/heuristic/possibleCards.csv", "w") as csv_file:
-                csv_writer = csv.writer(csv_file, delimiter=',')
-                csv_writer.writerow(myList)
+            try:
+                myList.remove(str(cardIndex))
+                with open("bots/heuristic/possibleCards.csv", "w") as csv_file:
+                    csv_writer = csv.writer(csv_file, delimiter=',')
+                    csv_writer.writerow(myList)
+            except:
+                pass
+
+        def how_many_card_can_beat_it(state,myList,card) -> int:
+            # see how many trump cards exist that are better
+            cardsThatCanBeatMyCard = 0
+            for ints in myList:
+                ints = int(ints)
+                # print(ints,card[0])
+                if (ints % 5 < card[0] % 5) or \
+                        (Deck.get_suit(card[0]) != state.get_trump_suit()
+                         and Deck.get_suit(ints) == state.get_trump_suit()):
+                    cardsThatCanBeatMyCard +=1
+            return cardsThatCanBeatMyCard
 
         # All legal moves
         moves = state.moves()
-        chosen_move = moves[0]
-        initializeCSVList()
         cardsLeftOver = getCSVList()
 
-        #logic
-        #play marriages
-        #play trump card
-        #play highest rated card
+        if (state.get_stock_size() == 10):
+            initializeCSVList()
 
-        # if following opponents play and all plays lead to loss play worst card.
         if state.get_opponents_played_card() is not None:
-            print(state.get_opponents_played_card())
-            removeFromCSVList(cardsLeftOver,state.get_opponents_played_card())
+            removeFromCSVList(cardsLeftOver, state.get_opponents_played_card())
             moves_same_suit = []
             # Get all moves of the same suit as the opponent's played card
-            for move in moves:
+            for index, move in enumerate(moves):
                 if move[0] is not None and Deck.get_suit(move[0]) == Deck.get_suit(state.get_opponents_played_card()):
                     moves_same_suit.append(move)
 
-            for move in moves_same_suit:
-                if move[0] > state.get_opponents_played_card():
-                    pass
-                else:
-                    min = moves_same_suit[0]
-                    for moves in moves_same_suit:
-                        if moves[0] < min[0]:
-                            min = moves[0]
-                    return min
+            if len(moves_same_suit) > 0:
+                myDict = {}
+                for move in moves_same_suit:
+                    if (move[0] is not None):
+                        myDict[move] = how_many_card_can_beat_it(state, cardsLeftOver, move)
+                removeFromCSVList(cardsLeftOver, min(myDict, key=myDict.get)[0])
+                return min(myDict, key=myDict.get)
+            else:
+                myDict = {}
+                for move in moves:
+                    if (move[0] is not None):
+                        myDict[move] = how_many_card_can_beat_it(state, cardsLeftOver, move)
+                removeFromCSVList(cardsLeftOver, min(myDict, key=myDict.get)[0])
+                return min(myDict, key=myDict.get)
 
-        # play marriages
-        for move in moves:
-            if move[0] is not None and move[1] is not None:
-                # print("Play Marriage")
-                return move
+        else:
+            myDict = {}
+            for move in moves:
+                if (move[0] is not None):
+                    myDict[move] = how_many_card_can_beat_it(state, cardsLeftOver, move)
+            removeFromCSVList(cardsLeftOver, min(myDict, key=myDict.get)[0])
+            return min(myDict, key=myDict.get)
 
-        # play trump card
-        for move in moves:
-            if move[0] is not None and Deck.get_suit(move[0]) == state.get_trump_suit():
-                # print("Play trump card")
-                return move
-
-        # play highest rated card
-        chosen_move = moves[0]
-        for move in moves:
-            if move[0] is not None and move[0] % 5 <= chosen_move[0] % 5:
-                # print("play highest rated card")
-                chosen_move = move
-            return chosen_move
-
-
-
-        # Return a random choice
-        # print("Play random card")
-        return random.choice(moves)
