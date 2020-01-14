@@ -5,12 +5,14 @@ uniformly at random.
 
 # Import the API objects
 from api import State, Deck
+import csv
 import random
 
 
-class Bot:
 
+class Bot:
     def __init__(self):
+
         pass
 
     def get_move(self, state):
@@ -26,10 +28,34 @@ class Bot:
             indicating a move; the first indicates the card played in the trick, the second a
             potential spouse.
         """
+        #initialize list of cards
+        def initializeCSVList():
+            if(state.get_stock_size() == 10):
+                with open("bots/heuristic/possibleCards.csv", "w") as csv_file:
+                    csv_writer = csv.writer(csv_file, delimiter=',')
+                    myList = list(range(0,23))
+                    csv_writer.writerow(myList)
+
+        #get list of cards
+        def getCSVList():
+            with open("bots/heuristic/possibleCards.csv", newline='') as csv_file:
+                reader = csv.reader(csv_file)
+                cardsLeftOver = reader
+                cardsLeftOver = list(cardsLeftOver)[0]
+                return cardsLeftOver
+
+        #remove one from the list
+        def removeFromCSVList(myList, cardIndex):
+            myList.remove(str(cardIndex))
+            with open("bots/heuristic/possibleCards.csv", "w") as csv_file:
+                csv_writer = csv.writer(csv_file, delimiter=',')
+                csv_writer.writerow(myList)
 
         # All legal moves
         moves = state.moves()
         chosen_move = moves[0]
+        initializeCSVList()
+        cardsLeftOver = getCSVList()
 
         #logic
         #play marriages
@@ -38,6 +64,8 @@ class Bot:
 
         # if following opponents play and all plays lead to loss play worst card.
         if state.get_opponents_played_card() is not None:
+            print(state.get_opponents_played_card())
+            removeFromCSVList(cardsLeftOver,state.get_opponents_played_card())
             moves_same_suit = []
             # Get all moves of the same suit as the opponent's played card
             for move in moves:
