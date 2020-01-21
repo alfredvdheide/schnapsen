@@ -12,10 +12,10 @@ from sklearn.externals import joblib
 
 # Path of the model we will use. If you make a model
 # with a different name, point this line to its path.
-DEFAULT_MODEL = os.path.dirname(os.path.realpath(__file__)) + '/model_ml_rand_100k.pkl'
-
+DEFAULT_MODEL = os.path.dirname(os.path.realpath(__file__)) + '/model_rdeep.pkl'
 
 class Bot:
+
     __randomize = True
 
     __model = None
@@ -86,7 +86,6 @@ class Bot:
 
         return res
 
-
 def maximizing(state):
     """
     Whether we're the maximizing player (1) or the minimizing player (2).
@@ -108,16 +107,16 @@ def features(state):
     feature_set = []
 
     # Add player 1's points to feature set
-    p1_points = State.get_points(state, 1)
+    p1_points = State.get_points(state,1)
 
     # Add player 2's points to feature set
-    p2_points = State.get_points(state, 2)
+    p2_points = State.get_points(state,2)
 
     # Add player 1's pending points to feature set
-    p1_pending_points = State.get_pending_points(state, 1)
+    p1_pending_points = State.get_pending_points(state,1)
 
     # Add plauer 2's pending points to feature set
-    p2_pending_points = State.get_pending_points(state, 2)
+    p2_pending_points = State.get_pending_points(state,2)
 
     # Get trump suit
     trump_suit = State.get_trump_suit(state)
@@ -137,17 +136,6 @@ def features(state):
     # Add opponent's played card to feature set
     opponents_played_card = State.get_opponents_played_card(state)
 
-    ############# custom added features #########################
-    previous_trick_size = 0
-    if State.get_prev_trick(state)[0] is not None:
-        previous_trick_size += int(State.get_prev_trick(state)[0])
-    if State.get_prev_trick(state)[1] is not None:
-        previous_trick_size += int(State.get_prev_trick(state)[1])
-
-    # print(previous_trick_size)
-
-    difference_in_points = util.difference_points(state, 1) + 100
-
 
     ################## You do not need to do anything below this line ########################
 
@@ -155,8 +143,8 @@ def features(state):
 
     # Perform one-hot encoding on the perspective.
     # Learn more about one-hot here: https://machinelearningmastery.com/how-to-one-hot-encode-sequence-data-in-python/
-    perspective = [card if card != 'U' else [1, 0, 0, 0, 0, 0] for card in perspective]
-    perspective = [card if card != 'S' else [0, 1, 0, 0, 0, 0] for card in perspective]
+    perspective = [card if card != 'U'   else [1, 0, 0, 0, 0, 0] for card in perspective]
+    perspective = [card if card != 'S'   else [0, 1, 0, 0, 0, 0] for card in perspective]
     perspective = [card if card != 'P1H' else [0, 0, 1, 0, 0, 0] for card in perspective]
     perspective = [card if card != 'P2H' else [0, 0, 0, 1, 0, 0] for card in perspective]
     perspective = [card if card != 'P1W' else [0, 0, 0, 0, 1, 0] for card in perspective]
@@ -167,13 +155,13 @@ def features(state):
 
     # Append normalized points to feature_set
     total_points = p1_points + p2_points
-    feature_set.append(p1_points / total_points if total_points > 0 else 0.)
-    feature_set.append(p2_points / total_points if total_points > 0 else 0.)
+    feature_set.append(p1_points/total_points if total_points > 0 else 0.)
+    feature_set.append(p2_points/total_points if total_points > 0 else 0.)
 
     # Append normalized pending points to feature_set
     total_pending_points = p1_pending_points + p2_pending_points
-    feature_set.append(p1_pending_points / total_pending_points if total_pending_points > 0 else 0.)
-    feature_set.append(p2_pending_points / total_pending_points if total_pending_points > 0 else 0.)
+    feature_set.append(p1_pending_points/total_pending_points if total_pending_points > 0 else 0.)
+    feature_set.append(p2_pending_points/total_pending_points if total_pending_points > 0 else 0.)
 
     # Convert trump suit to id and add to feature set
     # You don't need to add anything to this part
@@ -186,7 +174,7 @@ def features(state):
     feature_set += [1, 0] if phase == 1 else [0, 1]
 
     # Append normalized stock size to feature set
-    feature_set.append(stock_size / 10)
+    feature_set.append(stock_size/10)
 
     # Append one-hot encoded leader to feature set
     feature_set += [1, 0] if leader == 1 else [0, 1]
@@ -198,19 +186,6 @@ def features(state):
     opponents_played_card_onehot = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     opponents_played_card_onehot[opponents_played_card if opponents_played_card is not None else 20] = 1
     feature_set += opponents_played_card_onehot
-
-    # Appending custom features
-    max_trick_size = [0] * 40  # royal marriage
-    max_point_difference = [0] * 200
-    # print('diff', util.difference_points(state,1))
-    # print('size', difference_in_points)
-    # print('len',len(max_point_difference))
-    max_trick_size[previous_trick_size] = 1
-    max_point_difference[difference_in_points] = 1  # twice as big to incorporate negative numbers
-
-
-    feature_set += max_trick_size
-    feature_set += max_point_difference
 
     for index, element in enumerate(feature_set):
         if element == None:

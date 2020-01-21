@@ -19,11 +19,13 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.externals import joblib
 
 from bots.rand import rand
-# from bots.rdeep import rdeep
-
+from bots.kbbot import kbbot
+from bots.rdeep import rdeep
+from bots.ml import ml
 from bots.ml.ml import features
+from bots.ml2 import ml2
 
-def create_dataset(path, player=rand.Bot(), games=2000, phase=1):
+def create_dataset(path, player=ml.Bot(), games=2000, phase=1):
 
     data = []
     target = []
@@ -80,6 +82,56 @@ def create_dataset(path, player=rand.Bot(), games=2000, phase=1):
     return data, target
 
 
+def trainData():
+    if options.train:
+
+        # Play around with the model parameters below
+
+        # HINT: Use tournament fast mode (-f flag) to quickly test your different models.
+
+        # The following tuple specifies the number of hidden layers in the neural
+        # network, as well as the number of layers, implicitly through its length.
+        # You can set any number of hidden layers, even just one. Experiment and see what works.
+        hidden_layer_sizes = (64, 32)
+
+        # The learning rate determines how fast we move towards the optimal solution.
+        # A low learning rate will converge slowly, but a large one might overshoot.
+        learning_rate = 0.0001
+
+        # The regularization term aims to prevent overfitting, and we can tweak its strength here.
+        regularization_strength = 0.0001
+
+        #############################################
+
+        start = time.time()
+
+        print("Starting training phase...")
+
+        with open(options.dset_path, 'rb') as output:
+            data, target = pickle.load(output)
+
+        # Train a neural network
+        learner = MLPClassifier(hidden_layer_sizes=hidden_layer_sizes, learning_rate_init=learning_rate, alpha=regularization_strength, verbose=True, early_stopping=True, n_iter_no_change=6)
+        # learner = sklearn.linear_model.LogisticRegression()
+
+        model = learner.fit(data, target)
+
+        # Check for class imbalance
+        count = {}
+        for t in target:
+            if t not in count:
+                count[t] = 0
+            count[t] += 1
+
+        print('instances per class: {}'.format(count))
+
+        # Store the model in the ml directory
+        joblib.dump(model, "./bots/ml/" + options.model_path)
+
+        end = time.time()
+
+        print('Done. Time to train:', (end-start)/60, 'minutes.')
+
 ## Parse the command line options
 parser = ArgumentParser()
 
@@ -104,56 +156,15 @@ parser.add_argument("--no-train",
                     help="Don't train a model after generating dataset.")
 
 
-options = parser.parse_args()
+options = parser.parse_args(['-d','dataset_ml_rand_100k.pkl','-m','model_ml_rand_100k.pkl', '-o'])
+# if options.overwrite or not os.path.isfile(options.dset_path):
+#     create_dataset(options.dset_path, player=rdeep.Bot(), games=10000)
+create_dataset(options.dset_path, player=ml2.Bot(), games=10_000)
+trainData()
 
-if options.overwrite or not os.path.isfile(options.dset_path):
-    create_dataset(options.dset_path, player=rand.Bot(), games=10000)
+# options = parser.parse_args(['-d','dataset_rdeep.pkl','-m','model_rdeep.pkl','-o'])
+# # if options.overwrite or not os.path.isfile(options.dset_path):
+# #     create_dataset(options.dset_path, player=rdeep.Bot(), games=10000)
+# create_dataset(options.dset_path, player=rdeep.Bot(), games=10000)
+# trainData()
 
-if options.train:
-
-    # Play around with the model parameters below
-
-    # HINT: Use tournament fast mode (-f flag) to quickly test your different models.
-
-    # The following tuple specifies the number of hidden layers in the neural
-    # network, as well as the number of layers, implicitly through its length.
-    # You can set any number of hidden layers, even just one. Experiment and see what works.
-    hidden_layer_sizes = (64, 32)
-
-    # The learning rate determines how fast we move towards the optimal solution.
-    # A low learning rate will converge slowly, but a large one might overshoot.
-    learning_rate = 0.0001
-
-    # The regularization term aims to prevent overfitting, and we can tweak its strength here.
-    regularization_strength = 0.0001
-
-    #############################################
-
-    start = time.time()
-
-    print("Starting training phase...")
-
-    with open(options.dset_path, 'rb') as output:
-        data, target = pickle.load(output)
-
-    # Train a neural network
-    learner = MLPClassifier(hidden_layer_sizes=hidden_layer_sizes, learning_rate_init=learning_rate, alpha=regularization_strength, verbose=True, early_stopping=True, n_iter_no_change=6)
-    # learner = sklearn.linear_model.LogisticRegression()
-
-    model = learner.fit(data, target)
-
-    # Check for class imbalance
-    count = {}
-    for t in target:
-        if t not in count:
-            count[t] = 0
-        count[t] += 1
-
-    print('instances per class: {}'.format(count))
-
-    # Store the model in the ml directory
-    joblib.dump(model, "./bots/ml/" + options.model_path)
-
-    end = time.time()
-
-    print('Done. Time to train:', (end-start)/60, 'minutes.')
